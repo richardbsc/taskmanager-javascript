@@ -1,7 +1,6 @@
 
 /* TaskManager - Gestión de tareas */
 
-// Arreglo para guardar las tareas
 let tareas = [];
 let siguienteId = 1;
 let idEditando = null;
@@ -14,21 +13,29 @@ const prioridad = document.getElementById("prioridad");
 const listaTareas = document.getElementById("listaTareas");
 const botonGuardar = formulario.querySelector('button[type="submit"]');
 
-// Crear o actualizar una tarea
+// Elementos para buscar y filtrar
+const buscar = document.getElementById("buscar");
+const filtro = document.getElementById("filtro");
+const orden = document.getElementById("orden");
+
+// Contadores del dashboard
+const total = document.getElementById("total");
+const pendientes = document.getElementById("pendientes");
+const completadas = document.getElementById("completadas");
+
+// Crear o editar una tarea
 formulario.addEventListener("submit", function(evento) {
     evento.preventDefault();
 
     const nuevoTitulo = titulo.value.trim();
     const nuevaDescripcion = descripcion.value.trim();
 
-    // Validar que los campos no estén vacíos
     if (nuevoTitulo === "" || nuevaDescripcion === "") {
         alert("Debes completar el título y la descripción.");
         return;
     }
 
     if (idEditando !== null) {
-        // Actualizar tarea existente
         const tarea = tareas.find(t => t.id === idEditando);
 
         if (tarea) {
@@ -41,7 +48,6 @@ formulario.addEventListener("submit", function(evento) {
         botonGuardar.textContent = "Guardar tarea";
 
     } else {
-        // Crear una nueva tarea
         const nuevaTarea = {
             id: siguienteId++,
             title: nuevoTitulo,
@@ -58,22 +64,62 @@ formulario.addEventListener("submit", function(evento) {
     mostrarTareas();
 });
 
-// Mostrar las tareas en pantalla
+// Mostrar las tareas
 function mostrarTareas() {
     listaTareas.innerHTML = "";
 
-    if (tareas.length === 0) {
+    // Filtrar por estado
+    let tareasVisibles = tareas.filter(function(tarea) {
+        if (filtro.value === "pendientes") {
+            return !tarea.completed;
+        }
+
+        if (filtro.value === "completadas") {
+            return tarea.completed;
+        }
+
+        return true;
+    });
+
+    // Buscar por título
+    const textoBuscar = buscar.value.toLowerCase().trim();
+
+    tareasVisibles = tareasVisibles.filter(function(tarea) {
+        return tarea.title.toLowerCase().includes(textoBuscar);
+    });
+
+    // Ordenar por fecha o prioridad
+    if (orden.value === "prioridad") {
+        const niveles = {
+            alta: 1,
+            media: 2,
+            baja: 3
+        };
+
+        tareasVisibles.sort(function(a, b) {
+            return niveles[a.priority] - niveles[b.priority];
+        });
+
+    } else {
+        tareasVisibles.sort(function(a, b) {
+            return new Date(b.createdAt) - new Date(a.createdAt);
+        });
+    }
+
+    // Mensaje si no hay resultados
+    if (tareasVisibles.length === 0) {
         listaTareas.innerHTML =
-            '<p class="vacio">No hay tareas registradas.</p>';
+            '<p class="vacio">No se encontraron tareas.</p>';
+
+        actualizarDashboard();
         return;
     }
 
-    tareas.forEach(function(tarea) {
-
+    // Mostrar cada tarea
+    tareasVisibles.forEach(function(tarea) {
         const elemento = document.createElement("article");
         elemento.className = "tarea";
 
-        // Encabezado de la tarea
         const encabezado = document.createElement("div");
         encabezado.className = "tarea-encabezado";
 
@@ -86,18 +132,15 @@ function mostrarTareas() {
 
         encabezado.append(nombre, etiqueta);
 
-        // Descripción
         const detalle = document.createElement("p");
         detalle.textContent = tarea.description;
 
-        // Estado
         const estado = document.createElement("p");
         estado.className = "estado";
         estado.textContent = tarea.completed
             ? "Estado: Completada"
             : "Estado: Pendiente";
 
-        // Botones
         const acciones = document.createElement("div");
         acciones.className = "acciones";
 
@@ -119,14 +162,15 @@ function mostrarTareas() {
         btnEliminar.classList.add("eliminar");
 
         acciones.append(btnEstado, btnEditar, btnEliminar);
-
         elemento.append(encabezado, detalle, estado, acciones);
 
         listaTareas.appendChild(elemento);
     });
+
+    actualizarDashboard();
 }
 
-// Función para crear botones
+// Crear botones
 function crearBoton(texto, accion) {
     const boton = document.createElement("button");
     boton.type = "button";
@@ -136,7 +180,7 @@ function crearBoton(texto, accion) {
     return boton;
 }
 
-// Cambiar estado de una tarea
+// Cambiar estado
 function cambiarEstado(id) {
     const tarea = tareas.find(t => t.id === id);
 
@@ -146,13 +190,11 @@ function cambiarEstado(id) {
     }
 }
 
-// Editar una tarea
+// Editar tarea
 function editarTarea(id) {
     const tarea = tareas.find(t => t.id === id);
 
-    if (!tarea) {
-        return;
-    }
+    if (!tarea) return;
 
     titulo.value = tarea.title;
     descripcion.value = tarea.description;
@@ -165,19 +207,14 @@ function editarTarea(id) {
     window.scrollTo(0, 0);
 }
 
-// Eliminar una tarea
+// Eliminar tarea
 function eliminarTarea(id) {
-    const confirmar = confirm(
-        "¿Seguro que deseas eliminar esta tarea?"
-    );
-
-    if (!confirmar) {
+    if (!confirm("¿Seguro que deseas eliminar esta tarea?")) {
         return;
     }
 
     tareas = tareas.filter(t => t.id !== id);
 
-    // Si se estaba editando, limpiar formulario
     if (idEditando === id) {
         idEditando = null;
         formulario.reset();
@@ -187,5 +224,26 @@ function eliminarTarea(id) {
     mostrarTareas();
 }
 
-// Cargar la lista inicial
+// Actualizar estadísticas
+function actualizarDashboard() {
+    const cantidadTotal = tareas.length;
+
+    const cantidadCompletadas = tareas.filter(function(tarea) {
+        return tarea.completed;
+    }).length;
+
+    const cantidadPendientes =
+        cantidadTotal - cantidadCompletadas;
+
+    total.textContent = cantidadTotal;
+    pendientes.textContent = cantidadPendientes;
+    completadas.textContent = cantidadCompletadas;
+}
+
+// Eventos de búsqueda y filtros
+buscar.addEventListener("input", mostrarTareas);
+filtro.addEventListener("change", mostrarTareas);
+orden.addEventListener("change", mostrarTareas);
+
+// Mostrar tareas al iniciar
 mostrarTareas();
