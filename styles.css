@@ -1,4 +1,5 @@
 
+/* Estilos generales */
 * {
     margin: 0;
     padding: 0;
@@ -7,127 +8,214 @@
 
 body {
     font-family: Arial, sans-serif;
-    background: #f3f5fa;
-    color: #26324a;
+    background-color: #f4f6f9;
+    color: #333;
 }
 
-.header {
-    background: #4338ca;
+/* Encabezado */
+header {
+    background-color: #3949ab;
     color: white;
     text-align: center;
-    padding: 35px 20px;
+    padding: 25px;
 }
 
-.header h1 {
-    font-size: 32px;
-    margin-bottom: 10px;
+header h1 {
+    margin-bottom: 8px;
 }
 
+/* Contenedor principal */
 .container {
-    max-width: 1100px;
-    margin: 30px auto;
-    padding: 0 20px;
+    max-width: 1000px;
+    margin: 25px auto;
+    padding: 0 15px;
 }
 
+/* Resumen de tareas */
 .dashboard {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-    margin-bottom: 25px;
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
 }
 
 .card {
     background: white;
-    padding: 25px;
-    border-radius: 12px;
+    padding: 20px;
+    flex: 1;
     text-align: center;
-    box-shadow: 0 4px 15px #0000000b;
+    border-radius: 8px;
+    border: 1px solid #ddd;
 }
 
 .card h3 {
-    margin-bottom: 15px;
-    color: #64748b;
+    font-size: 16px;
+    margin-bottom: 10px;
 }
 
 .card span {
-    font-size: 36px;
+    font-size: 30px;
     font-weight: bold;
-    color: #4338ca;
+    color: #3949ab;
 }
 
+/* Paneles */
 .panel {
     background: white;
-    padding: 25px;
-    border-radius: 12px;
-    margin-bottom: 25px;
-    box-shadow: 0 4px 15px #0000000b;
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
 }
 
 .panel h2 {
-    margin-bottom: 20px;
+    margin-bottom: 15px;
+    font-size: 20px;
 }
 
+/* Formulario */
 form {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 10px;
+}
+
+label {
+    font-weight: bold;
 }
 
 input,
 textarea,
 select {
-    padding: 12px;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    font-size: 15px;
-    font-family: inherit;
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-family: Arial, sans-serif;
 }
 
 textarea {
-    min-height: 90px;
+    min-height: 70px;
     resize: vertical;
 }
 
 button {
-    background: #4338ca;
+    background-color: #3949ab;
     color: white;
     border: none;
-    border-radius: 8px;
-    padding: 13px;
+    padding: 10px 15px;
+    border-radius: 5px;
     cursor: pointer;
-    font-size: 15px;
 }
 
 button:hover {
-    background: #3730a3;
+    background-color: #283593;
 }
 
+/* Buscador y filtros */
 .herramientas {
     display: flex;
-    gap: 12px;
-    margin-bottom: 20px;
+    gap: 10px;
+    margin-bottom: 15px;
 }
 
 .herramientas input {
-    flex: 1;
-    min-width: 0;
+    flex: 2;
 }
 
+.herramientas select {
+    flex: 1;
+}
+
+/* Tarjetas de tareas */
+.tarea {
+    background-color: #fafafa;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 10px;
+}
+
+.tarea-encabezado {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.tarea h3 {
+    font-size: 17px;
+}
+
+.tarea p {
+    margin-bottom: 10px;
+}
+
+.prioridad {
+    padding: 5px 8px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.prioridad-alta {
+    background-color: #ffcdd2;
+    color: #b71c1c;
+}
+
+.prioridad-media {
+    background-color: #fff9c4;
+    color: #8d6e00;
+}
+
+.prioridad-baja {
+    background-color: #c8e6c9;
+    color: #1b5e20;
+}
+
+.estado {
+    font-size: 13px;
+    color: #666;
+}
+
+/* Botones de las tareas */
+.acciones {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.acciones button {
+    font-size: 13px;
+    padding: 8px 12px;
+}
+
+.acciones .eliminar {
+    background-color: #d32f2f;
+}
+
+.acciones .eliminar:hover {
+    background-color: #b71c1c;
+}
+
+/* Mensaje sin tareas */
 .vacio {
     text-align: center;
-    color: #94a3b8;
-    padding: 25px;
+    color: #777;
+    padding: 20px;
 }
 
+/* Pie de página */
 footer {
     text-align: center;
+    color: #777;
     padding: 20px;
-    color: #64748b;
 }
 
-@media (max-width: 700px) {
+/* Adaptación a celulares */
+@media (max-width: 650px) {
     .dashboard {
-        grid-template-columns: 1fr;
+        flex-direction: column;
     }
 
     .herramientas {

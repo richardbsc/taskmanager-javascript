@@ -4,18 +4,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TaskManager | Gestión de Tareas</title>
+    <title>TaskManager - Gestión de Tareas</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-    <header class="header">
+    <header>
         <h1>TaskManager</h1>
-        <p>Organiza tus actividades de manera sencilla</p>
+        <p>Aplicación para organizar mis tareas</p>
     </header>
 
     <main class="container">
 
+        <!-- Resumen de tareas -->
         <section class="dashboard">
             <div class="card">
                 <h3>Total de tareas</h3>
@@ -33,21 +34,26 @@
             </div>
         </section>
 
+        <!-- Formulario -->
         <section class="panel">
-            <h2>Nueva tarea</h2>
+            <h2>Agregar tarea</h2>
 
             <form id="formTarea">
+
+                <label for="titulo">Título</label>
                 <input
                     type="text"
                     id="titulo"
-                    placeholder="Título de la tarea"
+                    placeholder="Ejemplo: Estudiar JavaScript"
                 >
 
+                <label for="descripcion">Descripción</label>
                 <textarea
                     id="descripcion"
-                    placeholder="Descripción de la tarea"
+                    placeholder="Escribe una descripción"
                 ></textarea>
 
+                <label for="prioridad">Prioridad</label>
                 <select id="prioridad">
                     <option value="alta">Alta</option>
                     <option value="media" selected>Media</option>
@@ -58,14 +64,15 @@
             </form>
         </section>
 
+        <!-- Lista de tareas -->
         <section class="panel">
-            <h2>Mis tareas</h2>
+            <h2>Lista de tareas</h2>
 
             <div class="herramientas">
                 <input
                     type="search"
                     id="buscar"
-                    placeholder="Buscar tarea..."
+                    placeholder="Buscar por título"
                 >
 
                 <select id="filtro">
@@ -81,15 +88,16 @@
             </div>
 
             <div id="listaTareas">
-                <p class="vacio">Todavía no tienes tareas.</p>
+                <p class="vacio">No hay tareas registradas.</p>
             </div>
         </section>
 
     </main>
 
     <footer>
-        <p>TaskManager - Proyecto JavaScript ES6+</p>
+        <p>TaskManager - Proyecto de JavaScript</p>
     </footer>
 
+    <script src="script.js"></script>
 </body>
 </html>
