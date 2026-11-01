@@ -1,9 +1,12 @@
 
 /* TaskManager - Gestión de tareas */
 
+// Variables principales
 let tareas = [];
 let siguienteId = 1;
 let idEditando = null;
+
+const CLAVE = "taskmanager_tareas";
 
 // Elementos del HTML
 const formulario = document.getElementById("formTarea");
@@ -13,17 +16,137 @@ const prioridad = document.getElementById("prioridad");
 const listaTareas = document.getElementById("listaTareas");
 const botonGuardar = formulario.querySelector('button[type="submit"]');
 
-// Elementos para buscar y filtrar
+// Buscador y filtros
 const buscar = document.getElementById("buscar");
 const filtro = document.getElementById("filtro");
 const orden = document.getElementById("orden");
 
-// Contadores del dashboard
+// Contadores
 const total = document.getElementById("total");
 const pendientes = document.getElementById("pendientes");
 const completadas = document.getElementById("completadas");
 
-// Crear o editar una tarea
+// Guardar tareas en localStorage
+function guardarTareas() {
+    try {
+        localStorage.setItem(CLAVE, JSON.stringify(tareas));
+    } catch (error) {
+        mostrarMensaje("No se pudieron guardar las tareas.");
+    }
+}
+
+// Mostrar notificaciones en pantalla
+function mostrarMensaje(texto) {
+    const aviso = document.createElement("div");
+
+    aviso.textContent = texto;
+    aviso.style.backgroundColor = "#fff3cd";
+    aviso.style.color = "#664d03";
+    aviso.style.padding = "12px";
+    aviso.style.marginBottom = "15px";
+    aviso.style.borderRadius = "5px";
+    aviso.style.border = "1px solid #ffecb5";
+
+    listaTareas.before(aviso);
+
+    aviso.addEventListener("click", function() {
+        aviso.remove();
+    });
+}
+
+// Cargar tareas guardadas o importar desde la API
+async function cargarTareas() {
+    let guardadas = null;
+
+    try {
+        guardadas = localStorage.getItem(CLAVE);
+    } catch (error) {
+        mostrarMensaje("No se pudo acceder al almacenamiento local.");
+    }
+
+    if (guardadas !== null) {
+        try {
+            const datos = JSON.parse(guardadas);
+
+            if (!Array.isArray(datos)) {
+                throw new Error("Formato de datos incorrecto");
+            }
+
+            tareas = datos;
+
+            siguienteId = Math.max(
+                0,
+                ...tareas.map(t => Number(t.id) || 0)
+            ) + 1;
+
+            mostrarTareas();
+            return;
+
+        } catch (error) {
+            mostrarMensaje("Los datos guardados no son válidos.");
+            mostrarTareas();
+            return;
+        }
+    }
+
+    // Si no existen datos, consultar JSONPlaceholder
+    try {
+        const respuesta = await fetch(
+            "https://jsonplaceholder.typicode.com/todos?_limit=10"
+        );
+
+        if (!respuesta.ok) {
+            throw new Error("Error al consultar la API");
+        }
+
+        const datos = await respuesta.json();
+
+        if (!Array.isArray(datos)) {
+            throw new Error("Respuesta incorrecta de la API");
+        }
+
+        // Adaptar las tareas recibidas
+        const importadas = datos.map(function(tarea) {
+            return {
+                id: tarea.id,
+                title: tarea.title,
+                description: "Tarea importada desde JSONPlaceholder",
+                priority: "media",
+                completed: tarea.completed,
+                createdAt: new Date().toISOString()
+            };
+        });
+
+        // Revisar si se guardaron tareas durante la consulta
+        if (localStorage.getItem(CLAVE) !== null) {
+            await cargarTareas();
+            return;
+        }
+
+        tareas = importadas;
+
+        siguienteId = Math.max(
+            0,
+            ...tareas.map(t => Number(t.id) || 0)
+        ) + 1;
+
+        guardarTareas();
+        mostrarTareas();
+
+        mostrarMensaje("Se importaron tareas desde JSONPlaceholder.");
+
+    } catch (error) {
+        console.error("Error al cargar tareas:", error);
+
+        mostrarMensaje(
+            "No se pudo conectar con la API. Puedes crear tareas manualmente."
+        );
+
+        mostrarTareas();
+    }
+}
+
+// Crear o editar tareas
 formulario.addEventListener("submit", function(evento) {
     evento.preventDefault();
 
@@ -61,10 +184,11 @@ formulario.addEventListener("submit", function(evento) {
     }
 
     formulario.reset();
+    guardarTareas();
     mostrarTareas();
 });
 
-// Mostrar las tareas
+// Mostrar lista de tareas
 function mostrarTareas() {
     listaTareas.innerHTML = "";
 
@@ -106,7 +230,7 @@ function mostrarTareas() {
         });
     }
 
-    // Mensaje si no hay resultados
+    // Mostrar mensaje si no hay tareas
     if (tareasVisibles.length === 0) {
         listaTareas.innerHTML =
             '<p class="vacio">No se encontraron tareas.</p>';
@@ -115,7 +239,7 @@ function mostrarTareas() {
         return;
     }
 
-    // Mostrar cada tarea
+    // Crear tarjetas de tareas
     tareasVisibles.forEach(function(tarea) {
         const elemento = document.createElement("article");
         elemento.className = "tarea";
@@ -162,6 +286,7 @@ function mostrarTareas() {
         btnEliminar.classList.add("eliminar");
 
         acciones.append(btnEstado, btnEditar, btnEliminar);
+
         elemento.append(encabezado, detalle, estado, acciones);
 
         listaTareas.appendChild(elemento);
@@ -180,12 +305,13 @@ function crearBoton(texto, accion) {
     return boton;
 }
 
-// Cambiar estado
+// Completar o dejar pendiente una tarea
 function cambiarEstado(id) {
     const tarea = tareas.find(t => t.id === id);
 
     if (tarea) {
         tarea.completed = !tarea.completed;
+        guardarTareas();
         mostrarTareas();
     }
 }
@@ -194,7 +320,9 @@ function cambiarEstado(id) {
 function editarTarea(id) {
     const tarea = tareas.find(t => t.id === id);
 
-    if (!tarea) return;
+    if (!tarea) {
+        return;
+    }
 
     titulo.value = tarea.title;
     descripcion.value = tarea.description;
@@ -221,10 +349,11 @@ function eliminarTarea(id) {
         botonGuardar.textContent = "Guardar tarea";
     }
 
+    guardarTareas();
     mostrarTareas();
 }
 
-// Actualizar estadísticas
+// Actualizar los contadores
 function actualizarDashboard() {
     const cantidadTotal = tareas.length;
 
@@ -245,5 +374,5 @@ buscar.addEventListener("input", mostrarTareas);
 filtro.addEventListener("change", mostrarTareas);
 orden.addEventListener("change", mostrarTareas);
 
-// Mostrar tareas al iniciar
-mostrarTareas();
+// Iniciar la aplicación
+cargarTareas();
