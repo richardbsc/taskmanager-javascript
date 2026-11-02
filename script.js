@@ -16,7 +16,7 @@ const prioridad = document.getElementById("prioridad");
 const listaTareas = document.getElementById("listaTareas");
 const botonGuardar = formulario.querySelector('button[type="submit"]');
 
-// Buscador y filtros
+// Búsqueda y filtros
 const buscar = document.getElementById("buscar");
 const filtro = document.getElementById("filtro");
 const orden = document.getElementById("orden");
@@ -26,16 +26,7 @@ const total = document.getElementById("total");
 const pendientes = document.getElementById("pendientes");
 const completadas = document.getElementById("completadas");
 
-// Guardar tareas en localStorage
-function guardarTareas() {
-    try {
-        localStorage.setItem(CLAVE, JSON.stringify(tareas));
-    } catch (error) {
-        mostrarMensaje("No se pudieron guardar las tareas.");
-    }
-}
-
-// Mostrar notificaciones en pantalla
+// Mostrar mensajes en pantalla
 function mostrarMensaje(texto) {
     const aviso = document.createElement("div");
 
@@ -54,14 +45,55 @@ function mostrarMensaje(texto) {
     });
 }
 
-// Cargar tareas guardadas o importar desde la API
+// Guardar tareas en el navegador
+function guardarTareas() {
+    try {
+        localStorage.setItem(CLAVE, JSON.stringify(tareas));
+    } catch (error) {
+        mostrarMensaje("No se pudieron guardar las tareas.");
+    }
+}
+
+// Evento personalizado para avisar que cambiaron las tareas
+function notificarCambio() {
+    const evento = new CustomEvent("tareasActualizadas", {
+        detail: {
+            cantidad: tareas.length
+        }
+    });
+
+    document.dispatchEvent(evento);
+}
+
+// Actualizar los contadores del dashboard
+function actualizarDashboard() {
+    const cantidadTotal = tareas.length;
+
+    const cantidadCompletadas = tareas.filter(function(tarea) {
+        return tarea.completed;
+    }).length;
+
+    const cantidadPendientes =
+        cantidadTotal - cantidadCompletadas;
+
+    total.textContent = cantidadTotal;
+    pendientes.textContent = cantidadPendientes;
+    completadas.textContent = cantidadCompletadas;
+}
+
+// Escuchar el evento personalizado
+document.addEventListener("tareasActualizadas", function() {
+    actualizarDashboard();
+});
+
+// Cargar tareas guardadas o consultar la API
 async function cargarTareas() {
     let guardadas = null;
 
     try {
         guardadas = localStorage.getItem(CLAVE);
     } catch (error) {
-        mostrarMensaje("No se pudo acceder al almacenamiento local.");
+        mostrarMensaje("No se pudo leer el almacenamiento local.");
     }
 
     if (guardadas !== null) {
@@ -69,7 +101,7 @@ async function cargarTareas() {
             const datos = JSON.parse(guardadas);
 
             if (!Array.isArray(datos)) {
-                throw new Error("Formato de datos incorrecto");
+                throw new Error("Datos guardados incorrectos");
             }
 
             tareas = datos;
@@ -80,16 +112,18 @@ async function cargarTareas() {
             ) + 1;
 
             mostrarTareas();
+            notificarCambio();
             return;
 
         } catch (error) {
             mostrarMensaje("Los datos guardados no son válidos.");
             mostrarTareas();
+            notificarCambio();
             return;
         }
     }
 
-    // Si no existen datos, consultar JSONPlaceholder
+    // Consultar la API cuando no existen datos locales
     try {
         const respuesta = await fetch(
             "https://jsonplaceholder.typicode.com/todos?_limit=10"
@@ -105,7 +139,6 @@ async function cargarTareas() {
             throw new Error("Respuesta incorrecta de la API");
         }
 
-        // Adaptar las tareas recibidas
         const importadas = datos.map(function(tarea) {
             return {
                 id: tarea.id,
@@ -117,8 +150,10 @@ async function cargarTareas() {
             };
         });
 
-        // Revisar si se guardaron tareas durante la consulta
-        if (localStorage.getItem(CLAVE) !== null) {
+        // Evitar duplicados si hubo cambios durante la carga
+        const guardadasAhora = localStorage.getItem(CLAVE);
+
+        if (guardadasAhora !== null) {
             await cargarTareas();
             return;
         }
@@ -132,6 +167,7 @@ async function cargarTareas() {
 
         guardarTareas();
         mostrarTareas();
+        notificarCambio();
 
         mostrarMensaje("Se importaron tareas desde JSONPlaceholder.");
 
@@ -143,10 +179,11 @@ async function cargarTareas() {
         );
 
         mostrarTareas();
+        notificarCambio();
     }
 }
 
-// Crear o editar tareas
+// Crear o editar una tarea
 formulario.addEventListener("submit", function(evento) {
     evento.preventDefault();
 
@@ -186,9 +223,10 @@ formulario.addEventListener("submit", function(evento) {
     formulario.reset();
     guardarTareas();
     mostrarTareas();
+    notificarCambio();
 });
 
-// Mostrar lista de tareas
+// Mostrar las tareas
 function mostrarTareas() {
     listaTareas.innerHTML = "";
 
@@ -212,7 +250,7 @@ function mostrarTareas() {
         return tarea.title.toLowerCase().includes(textoBuscar);
     });
 
-    // Ordenar por fecha o prioridad
+    // Ordenar por prioridad o fecha
     if (orden.value === "prioridad") {
         const niveles = {
             alta: 1,
@@ -230,16 +268,13 @@ function mostrarTareas() {
         });
     }
 
-    // Mostrar mensaje si no hay tareas
     if (tareasVisibles.length === 0) {
         listaTareas.innerHTML =
             '<p class="vacio">No se encontraron tareas.</p>';
-
-        actualizarDashboard();
         return;
     }
 
-    // Crear tarjetas de tareas
+    // Crear las tarjetas
     tareasVisibles.forEach(function(tarea) {
         const elemento = document.createElement("article");
         elemento.className = "tarea";
@@ -286,18 +321,16 @@ function mostrarTareas() {
         btnEliminar.classList.add("eliminar");
 
         acciones.append(btnEstado, btnEditar, btnEliminar);
-
         elemento.append(encabezado, detalle, estado, acciones);
 
         listaTareas.appendChild(elemento);
     });
-
-    actualizarDashboard();
 }
 
-// Crear botones
+// Crear botones de las tareas
 function crearBoton(texto, accion) {
     const boton = document.createElement("button");
+
     boton.type = "button";
     boton.textContent = texto;
     boton.addEventListener("click", accion);
@@ -311,8 +344,10 @@ function cambiarEstado(id) {
 
     if (tarea) {
         tarea.completed = !tarea.completed;
+
         guardarTareas();
         mostrarTareas();
+        notificarCambio();
     }
 }
 
@@ -351,28 +386,13 @@ function eliminarTarea(id) {
 
     guardarTareas();
     mostrarTareas();
+    notificarCambio();
 }
 
-// Actualizar los contadores
-function actualizarDashboard() {
-    const cantidadTotal = tareas.length;
-
-    const cantidadCompletadas = tareas.filter(function(tarea) {
-        return tarea.completed;
-    }).length;
-
-    const cantidadPendientes =
-        cantidadTotal - cantidadCompletadas;
-
-    total.textContent = cantidadTotal;
-    pendientes.textContent = cantidadPendientes;
-    completadas.textContent = cantidadCompletadas;
-}
-
-// Eventos de búsqueda y filtros
+// Eventos del buscador y los filtros
 buscar.addEventListener("input", mostrarTareas);
 filtro.addEventListener("change", mostrarTareas);
 orden.addEventListener("change", mostrarTareas);
 
-// Iniciar la aplicación
+// Iniciar TaskManager
 cargarTareas();
